@@ -148,22 +148,19 @@ async def feedback_start(message: types.Message, state: FSMContext):
 async def get_bitcoin(message: types.Message):
     # Притворяемся браузером
     headers = {"User-Agent": "Mozilla/5.0"}
-    
+
     # Стучимся к старейшему API блокчейна
     response = requests.get("https://blockchain.info/ticker", headers=headers)
-    
+
     try:
         # Пытаемся расшифровать JSON
         data = response.json()
-        
-        # ОТЛАДКА: отправляем кусок сырого ответа вам в Телеграм!
-        # await message.answer(f"🛠 Сырой ответ сервера: {str(data)[:100]}...")
-        
+
         # У blockchain.info цена спрятана в словаре так:
-        price = data['USD']['last']
-        
+        price = data["USD"]["last"]
+
         await message.answer(f"📈 Текущий курс Bitcoin: {price} $")
-        
+
     except Exception as e:
         # Если сайт нас заблокировал, Питон не упадет, а пришлет текст ошибки прямо в чат!
         error_msg = f"⛔️ Ошибка доступа!\nКод: {response.status_code}\nТекст сайта: {response.text[:200]}"
