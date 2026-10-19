@@ -146,6 +146,21 @@ async def feedback_start(message: types.Message, state: FSMContext):
 
 
 # 2. Функция, которая ловит текст ТОЛЬКО если включен режим ожидания
+@dp.message(Feedback.waiting_for_message)
+async def feedback_receive(message: types.Message, state: FSMContext, bot: Bot):
+    user_text = message.text
+    user_name = message.from_user.username or message.from_user.first_name
+
+    ADMIN_ID = 280307127
+
+    await bot.send_message(
+        ADMIN_ID, f"📩 Новое сообщение от @{user_name}:\n\n{user_text}"
+    )
+    await message.answer("✅ Ваше сообщение успешно отправлено!")
+    await state.clear()
+
+
+# 2. Функция, которая ловит текст ТОЛЬКО если включен режим ожидания
 @dp.message(F.text == "💰 Курс Биткоина")
 async def get_bitcoin(message: types.Message):
     # Притворяемся браузером
