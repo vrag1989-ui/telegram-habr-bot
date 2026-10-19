@@ -13,6 +13,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     LabeledPrice,
+    CallbackQuery,
 )
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
@@ -49,15 +50,15 @@ about_kb = InlineKeyboardMarkup(
 )
 
 
-def get_habr_news():
+def get_habr_news_count(count):
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get("https://habr.com/ru/articles/", headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
     articles = soup.find_all("article")
 
-    result_text = "🌅 Утренний IT-кофе! Топ-5 свежих статей с Хабра:\n\n"
+    result_text = f"📰 Топ-{count} свежих статей с Хабра:\n\n"
 
-    for block in articles[:5]:
+    for block in articles[:count]:
         link_tag = block.find("a", class_="tm-title__link")
         if link_tag:
             title = link_tag.text
@@ -129,11 +130,33 @@ async def cmd_broadcast(message: types.Message):
 # Обработчик нашей главной команды
 @dp.message(F.text == "📊 Свежие статьи")
 async def cmd_scrape(message: types.Message):
-    # Просто просим функцию-помощника собрать новости
-    news = get_habr_news()
+    # Создаём инлайн-кнопки с выбором количества
+    choose_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="3 статьи", callback_data="news_3"),
+                InlineKeyboardButton(text="5 статей", callback_data="news_5"),
+                InlineKeyboardButton(text="10 статей", callback_data="news_10"),
+            ]
+        ]
+    )
+    await message.answer("Сколько статей показать?", reply_markup=choose_kb)
 
-    # И отправляем результат в чат
-    await message.answer(news, disable_web_page_preview=True)
+
+# Ловим нажатие на инлайн-кнопку (callback)
+@dp.callback_query(F.data.startswith("news_"))
+async def process_news_callback(callback: CallbackQuery):
+    # Достаём число из callback_data: "news_5" -> "5" -> 5
+    count = int(callback.data.split("_")[1])
+
+    # Парсим новости
+    news = get_habr_news_count(count)
+
+    # Отвечаем прямо в тот же чат
+    await callback.message.answer(news, disable_web_page_preview=True)
+
+    # Убираем "часики" с кнопки (Телеграм требует это делать!)
+    await callback.answer()
 
 
 # 1. Функция, которая реагирует на кнопку и ВКЛЮЧАЕТ режим ожидания
