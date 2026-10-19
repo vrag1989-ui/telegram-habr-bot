@@ -45,7 +45,7 @@
    venv\Scripts\activate # Windows
 
 3. Установить зависимости:
-   pip install aiogram requests beautifulsoup4 python-dotenv apscheduler
+   pip install -r requirements.txt
 
 4. Создать файл .env с токеном:
    BOT*TOKEN=ваш*токен

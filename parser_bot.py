@@ -12,6 +12,7 @@ from aiogram.types import (
     KeyboardButton,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    LabeledPrice,
 )
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
@@ -34,7 +35,8 @@ main_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text="📊 Свежие статьи")],
         [KeyboardButton(text="📈 Статистика")],
         [KeyboardButton(text="💬 Написать админу")],
-        [KeyboardButton(text="💰 Курс Биткоина")],  # <-- Добавили новую кнопку
+        [KeyboardButton(text="💰 Курс Биткоина")],
+        [KeyboardButton(text="⭐ VIP-подписка")],
     ],
     resize_keyboard=True,
 )
@@ -165,6 +167,27 @@ async def get_bitcoin(message: types.Message):
         # Если сайт нас заблокировал, Питон не упадет, а пришлет текст ошибки прямо в чат!
         error_msg = f"⛔️ Ошибка доступа!\nКод: {response.status_code}\nТекст сайта: {response.text[:200]}"
         await message.answer(error_msg)
+
+
+# Отправляем "счёт" (invoice) при нажатии на кнопку
+@dp.message(F.text == "⭐ VIP-подписка")
+async def send_stars_invoice(message: types.Message):
+    await message.answer_invoice(
+        title="VIP-подписка на 30 дней",
+        description="Доступ к эксклюзивным IT-новостям и аналитике 🔥",
+        payload="vip_30_days",  # Секретная метка для нас (пользователь её не видит)
+        currency="XTR",  # XTR — это код валюты Telegram Stars
+        prices=[LabeledPrice(label="VIP", amount=1)],  # Цена: 1 звезда (для теста)
+    )
+
+
+# Ловим успешную оплату
+@dp.message(F.successful_payment)
+async def on_successful_payment(message: types.Message):
+    # Сюда Телеграм автоматически пришлёт сообщение, когда человек оплатит
+    await message.answer(
+        "🎉 Оплата прошла! Добро пожаловать в VIP-клуб!\nСпасибо за поддержку! 🙏"
+    )
 
 
 async def send_morning_message(bot: Bot):
